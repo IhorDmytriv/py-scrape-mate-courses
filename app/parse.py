@@ -6,7 +6,7 @@ from dataclasses import dataclass, fields, astuple
 from typing import List
 from urllib.parse import urljoin
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from requests import Session
 
 
@@ -37,13 +37,22 @@ def get_page_soup(url: str) -> BeautifulSoup:
     return BeautifulSoup(response.text, "html.parser")
 
 
+def delete_duplicates_tags(tags: List[Tag]) -> List[Tag]:
+    unique_tags = []
+    for tag in tags:
+        if tag not in unique_tags:
+            unique_tags.append(tag)
+
+    return unique_tags
+
+
 def get_courses_from_page(page_soup: BeautifulSoup) -> List[Course]:
     logging.info("Get courses from page")
 
     courses = []
     courses_tag_a = page_soup.find_all("a", href=re.compile(r"^/courses/"))
     # Delete duplicates
-    courses_tag_a = set(courses_tag_a)
+    courses_tag_a = delete_duplicates_tags(courses_tag_a)
 
     for tag_a in courses_tag_a:
 
@@ -79,7 +88,7 @@ def parse_course_page(course: Course) -> Course:
     return course
 
 
-def write_courses_to_csv(courses: list[Course]) -> None:
+def write_courses_to_csv(courses: List[Course]) -> None:
     with open("courses.csv", "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(COURSE_FIELDS)

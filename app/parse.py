@@ -37,13 +37,17 @@ def get_page_soup(url: str) -> BeautifulSoup:
     return BeautifulSoup(response.text, "html.parser")
 
 
-def delete_duplicates_tags(tags: List[Tag]) -> List[Tag]:
-    unique_tags = []
-    for tag in tags:
-        if tag not in unique_tags:
-            unique_tags.append(tag)
+def delete_duplicates(tags: List[Tag]) -> List[Tag]:
+    filtered_tags = []
+    seen_html = set()
 
-    return unique_tags
+    for tag in tags:
+        tag_str = str(tag)
+        if tag_str not in seen_html:
+            seen_html.add(tag_str)
+            filtered_tags.append(tag)
+
+    return filtered_tags
 
 
 def get_courses_from_page(page_soup: BeautifulSoup) -> List[Course]:
@@ -52,7 +56,7 @@ def get_courses_from_page(page_soup: BeautifulSoup) -> List[Course]:
     courses = []
     courses_tag_a = page_soup.find_all("a", href=re.compile(r"^/courses/"))
     # Delete duplicates
-    courses_tag_a = delete_duplicates_tags(courses_tag_a)
+    courses_tag_a = delete_duplicates(courses_tag_a)
 
     for tag_a in courses_tag_a:
 
@@ -96,7 +100,7 @@ def write_courses_to_csv(courses: List[Course]) -> None:
     logging.info("Courses written to csv...!")
 
 
-def get_all_courses() -> list[Course]:
+def get_all_courses() -> List[Course]:
     page_soup = get_page_soup(BASE_URL)
     courses = get_courses_from_page(page_soup)
     list_parsed_courses = [parse_course_page(course) for course in courses]
